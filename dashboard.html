@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord Louagiste</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Tableau de bord - Louagiste</h1>
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Louage ID</th>
+                    <th>Action</th>
+                    <th>Départ</th>
+                    <th>Destination</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="logs-table-body">
+                <!-- Les données seront ajoutées ici via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Fonction pour charger les logs
+        async function loadLogs() {
+            try {
+                const response = await fetch('http://localhost:5000/api/logs');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const logs = await response.json();
+
+                const tableBody = document.getElementById('logs-table-body');
+                tableBody.innerHTML = ''; // Effacez les anciennes données
+
+                logs.forEach((log, index) => {
+                    const reserverButton = log.action === 'entrée' 
+                        ? `<button class="btn btn-primary btn-sm" onclick="generateTicket(${index})">Réserver</button>` 
+                        : '-';
+
+                    const row = `
+                        <tr>
+                            <td>${log.timestamp}</td>
+                            <td>${log.louage_id}</td>
+                            <td>${log.action}</td>
+                            <td>${log.depart || '-'}</td>
+                            <td>${log.destination || '-'}</td>
+                            <td>${reserverButton}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+
+                // Stocker les logs pour référence lors de la réservation
+                window.loadedLogs = logs;
+            } catch (error) {
+                console.error('Erreur lors du chargement des logs :', error);
+            }
+        }
+
+        // Fonction pour générer un ticket de réservation
+        function generateTicket(index) {
+            const log = window.loadedLogs[index];
+            const ticketContent = `
+                Ticket de Réservation
+                =======================
+                Louage ID : ${log.louage_id}
+                Date : ${log.timestamp}
+                Départ : ${log.depart || 'Non spécifié'}
+                =======================
+            `;
+
+            alert(ticketContent); // Affiche le ticket dans une boîte d'alerte
+        }
+
+        // Charger les logs au démarrage
+        loadLogs();
+        // Recharger les logs toutes les 30 secondes
+        setInterval(loadLogs, 30000);
+    </script>
+</body>
+</html>

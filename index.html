@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservation de Louages</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            text-align: center;
+            padding: 20px 15px;
+            border-bottom: 5px solid #0288d1;
+            font-size: 2rem;
+            width: 100%;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .sidebar {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #2a5298;
+            font-weight: 600;
+        }
+        
+        .sidebar h3 {
+            font-size: 1rem;
+            color: #2a5298;
+            font-weight: 600;
+        }
+
+        .sidebar p {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .itineraire input {
+            padding: 10px;
+            border: 1px solid #ff000d;
+            border-radius: 10px;
+            width: 100%;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .itineraire input:focus {
+            border-color: #00ff37;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+        }
+
+        #reserveBtn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #reserveBtn:hover {
+            background-color: #218838;
+        }
+
+        #mapBtn {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        #mapBtn:hover {
+            background-color: #138496;
+        }
+
+        #dashBtn {
+            background-color: #ffc107;
+            color: white;
+        }
+
+        #dashBtn:hover {
+            background-color: #e0a800;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        footer {
+            background-color: #f8f9fa;
+            color: #2a5298;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            font-size: 1rem;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        #welcome-message {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Ma7ata -- محطة</h1>
+    </header>
+
+    <div class="container">
+        <div class="sidebar">
+            <h2>Bienvenue sur Ma7ata</h2>
+            <h3>Votre Plateforme de Reservation des Louages en ligne. </h3>
+
+            <p id="welcome-message">Alors, <span id="username">Utilisateur non connecté</span> Que Souhaitez vous faire ?</p>
+
+            <!-- Champ pour entrer l'itinéraire -->
+            <div class="itineraire">
+                <h3>Choisir votre itinéraire : </h3>
+                <input type="text" id="itineraire" placeholder="Ex : Sousse à Tunis">
+            </div>
+
+            <button id="reserveBtn">Réserver un Ticket</button>
+            <button id="mapBtn">Voir la Carte</button>
+            <button id="dashBtn">Voir les Louages en Temps Réel</button>
+
+            <button class="logout-btn" id="logoutBtn">Se déconnecter</button>
+
+            <div id="ticketInfo" class="ticket-info"></div> <!-- Espace pour afficher le ticket -->
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Ma7ata -- محطة. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        // Récupérer le nom de l'utilisateur depuis le localStorage
+        const username = localStorage.getItem('username');
+        if (username) {
+            document.getElementById('username').textContent = username;
+        }
+
+        // Fonction de déconnexion (juste redirection vers login.html)
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('username'); // Efface le nom d'utilisateur du localStorage
+            window.location.href = 'login.html'; // Redirige vers la page de login
+        });
+
+        const API_BASE_URL = 'http://localhost:5000'; // URL de votre API Flask
+
+        // Réserver un ticket
+        document.getElementById('reserveBtn').addEventListener('click', async () => {
+            const itineraire = document.getElementById('itineraire').value;
+            if (!itineraire) {
+                alert('Veuillez entrer un itinéraire');
+                return;
+            }
+
+            // Générer un ticket fictif pour l'affichage
+            const ticketInfo = {
+                itineraire: itineraire,
+                date: new Date().toLocaleString()
+            };
+            
+            // Afficher le ticket généré
+            document.getElementById('ticketInfo').innerHTML = `
+                <h4>Ticket Réservé</h4>
+                <p>Itinéraire: ${ticketInfo.itineraire}</p>
+                <p>Date de Réservation: ${ticketInfo.date}</p>
+            `;
+
+            // Envoyer les données du ticket au serveur Flask
+            try {
+                const response = await fetch(`${API_BASE_URL}/tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(ticketInfo)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Ticket réservé avec succès !');
+                } else {
+                    alert('Erreur lors de la réservation du ticket');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur de communication avec le serveur');
+            }
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
